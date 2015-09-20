@@ -1,2 +1,2 @@
-var request = require('request');
-process.stdin.pipe(request.post('http://localhost:8099')).pipe(process.stdout);
+var ws = require('websocket-stream');
+ws('ws://localhost:8099').end("hello\n");
