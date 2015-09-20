@@ -1,13 +1,14 @@
-var through = require('through2'),
-    stream = through(write, end);
+var through = require('through'),
+    split = require('split'),
+    nlines = 1;
 
-function write(buffer, encoding, next) {
-    this.push(buffer.toString().toUpperCase());
-    next();
+function write(buf) {
+    this.queue(
+        buf.toString()[
+            nlines++ % 2 === 0? 'toUpperCase' : 'toLowerCase']() + '\n');
 }
 
-function end(done) {
-    done();
-}
-
-process.stdin.pipe(stream).pipe(process.stdout);
+process.stdin
+    .pipe(split())
+    .pipe(through(write))
+    .pipe(process.stdout);
