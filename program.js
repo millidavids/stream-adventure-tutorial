@@ -1,11 +1,7 @@
-var through = require('through2'),
-    trumpet = require('trumpet'),
-    tr = trumpet(),
-    stream = tr.select('.loud').createStream(),
-    th = through(function(buf, _, next) {
-        this.push(buf.toString().toUpperCase());
-        next();
-    });
+var spawn = require('child_process').spawn,
+    duplexer = require('duplexer2');
 
-process.stdin.pipe(tr).pipe(process.stdout);
-stream.pipe(th).pipe(stream);
+module.exports = function(cmd, args) {
+    var proc = spawn(cmd, args);
+    return duplexer(proc.stdin, proc.stdout);
+};
