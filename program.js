@@ -1,18 +1,40 @@
-var duplexer = require('duplexer2'),
-    through = require('through2').obj;
+var combine = require('stream-combiner'),
+    split = require('split')
+    through = require('through')
+    zlib = require('zlib');
 
-module.exports = function(counter) {
-    var count = {};
-    var input = through(write, end);
-    return duplexer(input, counter);
+module.exports = function() {
+    var genreInfo;
 
-    function write(row, _, next){
-        count[row.country] = (count[row.country] || 0) + 1;
-        next();
+    function write(buf) {
+        if (buf.length === 0) {
+            return;
+        }
+
+        buf = JSON.parse(buf);
+        if (buf.type === 'genre') {
+            if(genreInfo) {
+                this.queue(JSON.stringify(genreInfo) + '\n');
+            }
+
+            genreInfo = {
+                name: buf.name,
+                books: []
+            }
+
+        } else {
+            genreInfo.books.push(buf.name);
+        }
     };
 
-    function end(done) {
-        counter.setCounts(count);
-        done();
+    function end() {
+        this.queue(JSON.stringify(genreInfo) +'\n');
+        this.queue(null);
     };
+
+    return combine(
+        split(),
+        through(write, end),
+        zlib.createGzip()
+    );
 };
